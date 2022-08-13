@@ -1,0 +1,2 @@
+# BattleshipsTheGame
+Simplified battleships game
