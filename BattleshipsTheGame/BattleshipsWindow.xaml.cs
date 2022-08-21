@@ -1,17 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace BattleshipsTheGame
 {
@@ -69,9 +62,11 @@ namespace BattleshipsTheGame
                             case 0:             //vertical
                                 tmpShipPosition.Add(new KeyValuePair<int, int>(row + i, column));
                                 break;
+
                             case 1:             //horizontal
                                 tmpShipPosition.Add(new KeyValuePair<int, int>(row, column + i));
                                 break;
+
                             default:
                                 throw new ArgumentOutOfRangeException("direction value is out of range.");
                         }
@@ -89,6 +84,54 @@ namespace BattleshipsTheGame
                             _battlefieldArray[kvp.Key, kvp.Value] = true;
                 }
             }
+        }
+
+        private void TextBox_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            _movesCounter++;
+            TextBox textBox = sender as TextBox;
+            string tmpString = textBox?.Name.Substring(12);
+            int[] coordinates = new int[2];
+            string[] tmpArray = tmpString.Split('_');
+            for (int i = 0; i < coordinates.Length; i++)
+                coordinates[i] = Convert.ToInt32(tmpArray[i]);
+            if (_battlefieldArray?[coordinates[0], coordinates[1]] == true)
+            {
+                textBox.Text = "💥";
+                _pointsCounter++;
+            }
+            else
+                textBox.Text = "✕";
+
+            IsWinner();
+        }
+
+        private async void IsWinner()
+        {
+            int? necessaryPoints = _shipsList?.Sum();
+            if (_pointsCounter == necessaryPoints)
+            {
+                var playAgain = MessageBox.Show($"You won!\nMoves counter: {_movesCounter} \nDo you want to play once again?", "End of the game", MessageBoxButton.YesNo);
+                if (playAgain == MessageBoxResult.Yes)
+                {
+                    this.Hide();
+                    await Task.Run(() => CreateNewGame());
+                    Task.WaitAll();
+                    this.Close();
+                }
+                else if (playAgain == MessageBoxResult.No)
+                    this.Close();
+            }
+        }
+
+        private Task CreateNewGame()
+        {
+            Application.Current.Dispatcher.Invoke((Action)delegate
+            {
+                BattleshipsWindow newGame = new BattleshipsWindow();
+                newGame.ShowDialog();
+            });
+            return Task.CompletedTask;
         }
     }
 }
