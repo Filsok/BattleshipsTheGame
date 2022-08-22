@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -10,39 +9,39 @@ namespace BattleshipsTheGame
 {
     public partial class BattleshipsWindow : Window
     {
-        private int _battlefeldSize = 10;
-        private int _pointsCounter = 0;
-        private int _movesCounter = 0;
-        private bool[,]? _battlefieldArray;
-        private List<int>? _shipsList;
+        private const int _battlefeldSize = 10;
+        private int _pointsCounter;
+        private int _movesCounter;
+        private bool[,] _battlefieldArray;
+        private readonly List<int> _shipsList;
 
         public BattleshipsWindow()
         {
+            _shipsList = new List<int>() { 5, 4, 4 };
             InitializeComponent();
             SetupGame();
         }
 
         private void SetupGame()
         {
-            _shipsList?.Clear();
-            _shipsList = new List<int>() { 5, 4, 4 };
+            _pointsCounter = 0;
+            _movesCounter = 0;
             _battlefieldArray = new bool[_battlefeldSize, _battlefeldSize];
 
             var random = new Random();
-            int direction, column, row;
+            int rotate, column, row;
             bool isEnoughSpace;
-            List<KeyValuePair<int, int>> tmpShipPosition = new List<KeyValuePair<int, int>>();
-            foreach (int ship in _shipsList)
+            var tmpShipPosition = new List<KeyValuePair<int, int>>();
+            foreach (var ship in _shipsList)
             {
                 isEnoughSpace = false;
                 while (!isEnoughSpace)
                 {
                     tmpShipPosition.Clear();
-                    //draw a rotate of this ship
-                    direction = random.Next(0, 2);               //directions: 0-vertical(down), 1-horizontal(right)
 
-                    //draw a start point on the battlefield
-                    if (direction == 0)
+                    rotate = random.Next(0, 2);
+
+                    if (rotate == ((int)Rotate.VERTICAL))
                     {
                         row = random.Next(1, _battlefeldSize - ship);
                         column = random.Next(1, _battlefeldSize);
@@ -55,27 +54,27 @@ namespace BattleshipsTheGame
 
                     //prepare list of potential fields occupied by the ship
                     tmpShipPosition.Add(new KeyValuePair<int, int>(row, column));
-                    for (int i = 1; i < ship; i++)
+                    for (var i = 1; i < ship; i++)
                     {
-                        switch (direction)
+                        switch (rotate)
                         {
-                            case 0:             //vertical
+                            case ((int)Rotate.VERTICAL):
                                 tmpShipPosition.Add(new KeyValuePair<int, int>(row + i, column));
                                 break;
 
-                            case 1:             //horizontal
+                            case ((int)Rotate.HORIZONTAL):
                                 tmpShipPosition.Add(new KeyValuePair<int, int>(row, column + i));
                                 break;
 
                             default:
-                                throw new ArgumentOutOfRangeException("direction value is out of range.");
+                                throw new ArgumentOutOfRangeException("rotate value is out of range.");
                         }
                     }
 
                     //check if any of fields are occupied already
                     isEnoughSpace = true;
                     foreach (var kvp in tmpShipPosition)
-                        if (_battlefieldArray[kvp.Key, kvp.Value] == true)
+                        if (_battlefieldArray[kvp.Key, kvp.Value])
                             isEnoughSpace = false;
 
                     //put the ship on the battlefield
@@ -90,48 +89,59 @@ namespace BattleshipsTheGame
         {
             _movesCounter++;
             TextBox textBox = sender as TextBox;
-            string tmpString = textBox?.Name.Substring(12);
-            int[] coordinates = new int[2];
-            string[] tmpArray = tmpString.Split('_');
-            for (int i = 0; i < coordinates.Length; i++)
-                coordinates[i] = Convert.ToInt32(tmpArray[i]);
-            if (_battlefieldArray?[coordinates[0], coordinates[1]] == true)
+            Coordinate coordinate = new Coordinate(textBox.Name
+                .Substring(textBox.Name.IndexOf("_") + 1)
+                .Split('_')
+                .Select(x => Int32.Parse(x)));
+            if (_battlefieldArray[coordinate.Row, coordinate.Column])
             {
                 textBox.Text = "💥";
                 _pointsCounter++;
+                CheckIfWinner();
             }
             else
                 textBox.Text = "✕";
-
-            IsWinner();
         }
 
-        private async void IsWinner()
+        private void CheckIfWinner()
         {
-            int? necessaryPoints = _shipsList?.Sum();
+            var necessaryPoints = _shipsList.Sum();
             if (_pointsCounter == necessaryPoints)
             {
-                var playAgain = MessageBox.Show($"You won!\nMoves counter: {_movesCounter} \nDo you want to play once again?", "End of the game", MessageBoxButton.YesNo);
+                var playAgain = MessageBox.Show($"You won!\nMoves counter: {_movesCounter}" +
+                    $"\nDo you want to play once again?"
+                    ,"End of the game", MessageBoxButton.YesNo);
                 if (playAgain == MessageBoxResult.Yes)
-                {
-                    this.Hide();
-                    await Task.Run(() => CreateNewGame());
-                    Task.WaitAll();
-                    this.Close();
-                }
-                else if (playAgain == MessageBoxResult.No)
+                    CreateNewGame();
+                else
                     this.Close();
             }
         }
 
-        private Task CreateNewGame()
+        private void CreateNewGame()
         {
-            Application.Current.Dispatcher.Invoke((Action)delegate
+            foreach (TextBox textBox in mainGrid.Children.OfType<TextBox>())
             {
-                BattleshipsWindow newGame = new BattleshipsWindow();
-                newGame.ShowDialog();
-            });
-            return Task.CompletedTask;
+                textBox.Text = "◦";
+            }
+            SetupGame();
+        }
+
+        private enum Rotate
+        {
+            VERTICAL,
+            HORIZONTAL
+        }
+    }
+
+    internal record Coordinate
+    {
+        public int Row, Column;
+
+        public Coordinate(IEnumerable<int> enumarable)
+        {
+            Row = enumarable.ElementAt(0);
+            Column = enumarable.ElementAt(1);
         }
     }
 }
