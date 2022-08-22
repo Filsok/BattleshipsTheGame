@@ -108,8 +108,9 @@ namespace BattleshipsTheGame
             var necessaryPoints = _shipsList.Sum();
             if (_pointsCounter == necessaryPoints)
             {
-                var playAgain = MessageBox.Show($"You won!\nMoves counter: {_movesCounter} \n_pointsCounter={_pointsCounter}  " +
-                    $"necessaryPoints={necessaryPoints}\nDo you want to play once again?", "End of the game", MessageBoxButton.YesNo);
+                var playAgain = MessageBox.Show($"You won!\nMoves counter: {_movesCounter}" +
+                    $"\nDo you want to play once again?"
+                    ,"End of the game", MessageBoxButton.YesNo);
                 if (playAgain == MessageBoxResult.Yes)
                     CreateNewGame();
                 else
