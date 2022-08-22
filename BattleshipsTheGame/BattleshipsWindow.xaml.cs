@@ -87,20 +87,23 @@ namespace BattleshipsTheGame
 
         private void TextBox_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            _movesCounter++;
             TextBox textBox = sender as TextBox;
-            Coordinate coordinate = new Coordinate(textBox.Name
-                .Substring(textBox.Name.IndexOf("_") + 1)
-                .Split('_')
-                .Select(x => Int32.Parse(x)));
-            if (_battlefieldArray[coordinate.Row, coordinate.Column])
+            if (textBox.Text == "◦")
             {
-                textBox.Text = "💥";
-                _pointsCounter++;
-                CheckIfWinner();
+                _movesCounter++;
+                Coordinate coordinate = new Coordinate(textBox.Name
+                    .Substring(textBox.Name.IndexOf("_") + 1)
+                    .Split('_')
+                    .Select(x => Int32.Parse(x)));
+                if (_battlefieldArray[coordinate.Row, coordinate.Column])
+                {
+                    textBox.Text = "💥";
+                    _pointsCounter++;
+                    CheckIfWinner();
+                }
+                else
+                    textBox.Text = "✕";
             }
-            else
-                textBox.Text = "✕";
         }
 
         private void CheckIfWinner()
@@ -110,7 +113,7 @@ namespace BattleshipsTheGame
             {
                 var playAgain = MessageBox.Show($"You won!\nMoves counter: {_movesCounter}" +
                     $"\nDo you want to play once again?"
-                    ,"End of the game", MessageBoxButton.YesNo);
+                    , "End of the game", MessageBoxButton.YesNo);
                 if (playAgain == MessageBoxResult.Yes)
                     CreateNewGame();
                 else
